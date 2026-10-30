@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปข้อมูลการลา (ผู้บริหาร)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style> body { font-family: 'Sarabun', sans-serif; background: #f0f2f5; } </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-xl shadow-sm p-5 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-chart-pie text-indigo-600"></i> สรุปข้อมูลการลา</h1>
+                <p class="text-sm text-gray-500">โรงเรียนกาญจนาภิเษกวิทยาลัย กระบี่</p>
+            </div>
+            <div class="flex items-center gap-2 bg-gray-100 p-2 rounded-lg">
+                <i class="fa-regular fa-calendar text-gray-500"></i>
+                <input type="date" id="filterDate" class="bg-transparent border-none outline-none text-gray-700 font-medium cursor-pointer" onchange="loadData()">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500 text-center">
+                <div class="text-gray-500 text-xs mb-1">ลาทั้งหมด</div>
+                <div class="text-2xl font-bold text-gray-800" id="countTotal">0</div>
+                <div class="text-xs text-gray-400">คน</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500 text-center">
+                <div class="text-gray-500 text-xs mb-1">รออนุมัติ</div>
+                <div class="text-2xl font-bold text-yellow-600" id="countPending">0</div>
+                <div class="text-xs text-gray-400">คน</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 text-center">
+                <div class="text-gray-500 text-xs mb-1">อนุมัติแล้ว</div>
+                <div class="text-2xl font-bold text-green-600" id="countApproved">0</div>
+                <div class="text-xs text-gray-400">คน</div>
+            </div>
+        </div>
+
+        <div id="loading" class="text-center py-10 text-gray-500">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl mb-2"></i><br>กำลังประมวลผลข้อมูล...
+        </div>
+
+        <div id="resultList" class="space-y-3 hidden">
+            </div>
+        
+        <div id="noData" class="hidden text-center py-10 bg-white rounded-xl shadow-sm">
+            <div class="text-4xl mb-2">🍃</div>
+            <p class="text-gray-500">ไม่มีรายการลาในวันนี้</p>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // ตั้งค่าวันปัจจุบันให้ Input Date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterDate').value = today;
+            loadData();
+        };
+
+        function loadData() {
+            const dateVal = document.getElementById('filterDate').value;
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('resultList').classList.add('hidden');
+            document.getElementById('noData').classList.add('hidden');
+
+            google.script.run.withSuccessHandler(renderData).getDailyStats(dateVal);
+        }
+
+        function renderData(data) {
+            document.getElementById('loading').classList.add('hidden');
+            
+            // Update Counts
+            document.getElementById('countTotal').innerText = data.length;
+            document.getElementById('countPending').innerText = data.filter(d => d.status.includes('รอ')).length;
+            document.getElementById('countApproved').innerText = data.filter(d => d.status.includes('อนุมัติ') && !d.status.includes('ไม่')).length;
+
+            const list = document.getElementById('resultList');
+            list.innerHTML = '';
+
+            if (data.length === 0) {
+                document.getElementById('noData').classList.remove('hidden');
+                return;
+            }
+
+            data.forEach(item => {
+                let statusColor = 'bg-gray-100 text-gray-600';
+                let icon = 'fa-clock';
+                if (item.status.includes('อนุมัติ') && !item.status.includes('ไม่')) { 
+                    statusColor = 'bg-green-100 text-green-700'; icon = 'fa-check-circle';
+                } else if (item.status.includes('ไม่อนุมัติ')) { 
+                    statusColor = 'bg-red-100 text-red-700'; icon = 'fa-times-circle';
+                } else {
+                    statusColor = 'bg-yellow-100 text-yellow-700'; 
+                }
+
+                let typeBadge = '';
+                if(item.cat === 'general') typeBadge = '<span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">ลาทั่วไป</span>';
+                else if(item.cat === 'official') typeBadge = '<span class="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded">ไปราชการ</span>';
+                else if(item.cat === 'outside') typeBadge = '<span class="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded">ออกนอก</span>';
+
+                const div = document.createElement('div');
+                div.className = 'bg-white p-4 rounded-xl shadow-sm flex items-start justify-between border border-gray-100';
+                div.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-gray-800 text-lg">${item.name}</span>
+                            ${typeBadge}
+                        </div>
+                        <p class="text-gray-600 text-sm mb-1"><i class="fa-solid fa-tag opacity-50 w-5 text-center"></i> ${item.type}</p>
+                        <p class="text-gray-500 text-xs"><i class="fa-solid fa-note-sticky opacity-50 w-5 text-center"></i> ${item.reason}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 ${statusColor}">
+                            <i class="fa-regular ${icon}"></i> ${item.status || 'รออนุมัติ'}
+                        </span>
+                        <span class="text-xs text-gray-400">${item.dateDisplay}</span>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            list.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
