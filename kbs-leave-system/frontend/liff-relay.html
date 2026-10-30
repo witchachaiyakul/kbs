@@ -15,18 +15,30 @@
 <body>
 <div class="box"><div class="spin"></div><p id="msg">กำลังเข้าสู่ระบบ LINE...</p></div>
 <script>
-  // ⚠️ แก้ 1 ค่านี้: ลิงก์ Web App ของ Apps Script (ลงท้าย /exec)
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbx78L4ueG0HB45VcOKbh1PUalEcZGkPuHk9lsU6Z_UCxhobBP3flX0SjkPiBPSZK-2NUA/exec";
   const LIFF_ID = "2012279186-NxQVJ4Ni";
 
   liff.init({ liffId: LIFF_ID }).then(() => {
     if (!liff.isLoggedIn()) { liff.login(); return; }   // อยู่หน้าต่างบนสุด จึงเปิดหน้า Login ของ LINE ได้
     const idToken = liff.getIDToken();
     if (!idToken) throw new Error("ไม่ได้รับ ID Token (ตรวจ scope openid ใน LIFF)");
-    const page = new URLSearchParams(location.search).get('page');
-    let url = GAS_URL + "?idt=" + encodeURIComponent(idToken);
-    if (page) url += "&page=" + encodeURIComponent(page);
-    location.replace(url);
+    const params = new URLSearchParams(location.search);
+    const page = params.get('page');
+    const targetPage = page === 'admin_dashboard' ? 'admin.html' : 'index.html';
+    const returnTo = params.get('returnTo');
+    let target = new URL(targetPage, location.href);
+
+    if (returnTo) {
+      try {
+        const localTarget = new URL(returnTo);
+        if (localTarget.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(localTarget.hostname)) {
+          target = new URL(targetPage, localTarget);
+        }
+      } catch (e) {}
+    }
+
+    target.searchParams.set('idt', idToken);
+    if (page && page !== 'admin_dashboard') target.searchParams.set('page', page);
+    location.replace(target.toString());
   }).catch(err => {
     console.error(err);
     document.getElementById('msg').textContent = "เข้าสู่ระบบไม่สำเร็จ: " + err.message;

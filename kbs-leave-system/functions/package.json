@@ -1,0 +1,14 @@
+{
+  "name": "kbs-leave-functions",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "firebase-functions": "^7.4.0"
+  }
+}

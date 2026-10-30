@@ -42,8 +42,7 @@ function normalizeSchedule(arr) {
     if (!Array.isArray(arr)) return [];
     return arr.map(s => Object.assign({}, s, { period: parseInt(s.period) }));
 }
-// เรียก google.script.run พร้อม failure handler เสมอ
-// ถ้าเซิร์ฟเวอร์แจ้งว่า LINE token หมดอายุ/ยังไม่ลงทะเบียน จะพากลับไปหน้าล็อกอิน/ลงทะเบียนอัตโนมัติ
+// เรียก API proxy พร้อม failure handler เสมอ
 function gas(fn, args, ok, fail) {
     const wrapped = err => {
         const msg = (err && err.message) || String(err);
@@ -52,9 +51,20 @@ function gas(fn, args, ok, fail) {
         if (fail) fail(err);
         else { console.error(fn, err); showLoading(false); Swal.fire('ระบบขัดข้อง', msg, 'error'); }
     };
-    try {
-        google.script.run.withSuccessHandler(ok).withFailureHandler(wrapped)[fn](...args);
-    } catch (e) { console.error(fn, e); wrapped(e); }
+    const apiUrl = window.APP_CONFIG && window.APP_CONFIG.apiUrl;
+    if (!apiUrl || apiUrl.includes('YOUR_FIREBASE_PROJECT_ID')) {
+        wrapped(new Error('กรุณาตั้งค่า Firebase Function URL ใน frontend/js/config.js'));
+        return;
+    }
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: fn, args })
+    }).then(async response => {
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || 'API_REQUEST_FAILED');
+        return result.data;
+    }).then(ok).catch(wrapped);
 }
 
 // ดึงตารางสอนของครู (ใช้แคชก่อน ถ้าไม่มีค่อยถามเซิร์ฟเวอร์)
@@ -116,16 +126,12 @@ window.onload = function () {
 
 // อ่านพารามิเตอร์ ?page=general|official|outside
 function checkUrlParameter() {
-    try {
-        google.script.url.getLocation(function (location) {
-            const page = location && location.parameter && location.parameter.page;
-            if (page && VALID_CATEGORIES.includes(page)) {
-                lockedCategory = page;
-                selectCategory(page);
-                document.getElementById('btnBack').classList.add('hidden');
-            }
-        });
-    } catch (e) { console.warn('อ่านพารามิเตอร์ URL ไม่ได้', e); }
+    const page = new URLSearchParams(window.location.search).get('page');
+    if (page && VALID_CATEGORIES.includes(page)) {
+        lockedCategory = page;
+        selectCategory(page);
+        document.getElementById('btnBack').classList.add('hidden');
+    }
 }
 
 // ==========================================
@@ -729,9 +735,7 @@ const LIFF_URL = 'https://liff.line.me/' + LIFF_ID;
 let appStarted = false;
 
 function getUrlParam(name, cb) {
-    try {
-        google.script.url.getLocation(function (loc) { cb(loc && loc.parameter ? loc.parameter[name] : null); });
-    } catch (e) { cb(null); }
+    cb(new URLSearchParams(window.location.search).get(name));
 }
 
 function showLoginGate(msg) {
@@ -754,7 +758,10 @@ function hideBindModal() {
 
 function goLineLogin() {
     getUrlParam('page', p => {
-        window.open(LIFF_URL + (p ? '?page=' + encodeURIComponent(p) : ''), '_top');
+        const params = new URLSearchParams();
+        if (p) params.set('page', p);
+        params.set('returnTo', window.location.origin + window.location.pathname);
+        window.location.assign(LIFF_URL + '?' + params.toString());
     });
 }
 

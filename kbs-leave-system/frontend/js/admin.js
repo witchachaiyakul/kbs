@@ -1,4 +1,14 @@
+const LIFF_ID = '2012279186-NxQVJ4Ni';
+const idToken = new URLSearchParams(window.location.search).get('idt');
+
 window.onload = function() {
+    if (!idToken) {
+        const returnTo = window.location.origin + window.location.pathname;
+        const params = new URLSearchParams({ page: 'admin_dashboard', returnTo });
+        window.location.replace(`https://liff.line.me/${LIFF_ID}?${params.toString()}`);
+        return;
+    }
+
     // ตั้งค่าวันปัจจุบันให้ Input Date
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('filterDate').value = today;
@@ -11,7 +21,23 @@ function loadData() {
     document.getElementById('resultList').classList.add('hidden');
     document.getElementById('noData').classList.add('hidden');
 
-    google.script.run.withSuccessHandler(renderData).getDailyStats(dateVal);
+    const apiUrl = window.APP_CONFIG && window.APP_CONFIG.apiUrl;
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: 'getDailyStats', args: [idToken, dateVal] })
+    }).then(async response => {
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || 'API_REQUEST_FAILED');
+        renderData(result.data || []);
+    }).catch(error => {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('noData').classList.remove('hidden');
+        document.getElementById('noData').innerText = error.message === 'NOT_ADMIN'
+            ? 'บัญชี LINE นี้ไม่มีสิทธิ์เข้าดูข้อมูลผู้บริหาร'
+            : 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่';
+        console.error('getDailyStats failed', error);
+    });
 }
 
 function renderData(data) {

@@ -7,6 +7,7 @@
 const PROPS = PropertiesService.getScriptProperties();
 const TOKEN_ADMIN = PROPS.getProperty('TOKEN_ADMIN') || '';
 const TOKEN_TEACHER = PROPS.getProperty('TOKEN_TEACHER') || '';
+const API_SHARED_SECRET = PROPS.getProperty('API_SHARED_SECRET') || '';
 // Channel ID ของ LINE Login channel (ตัวเลขหน้าขีดใน LIFF ID)
 const LINE_LOGIN_CHANNEL_ID = '2012279186';
 const ADMIN_USER_ID = 'Uf286e2374b7d6dbd570c2511db16dfe0';
@@ -56,17 +57,8 @@ const THAI_DAYS = ["อาทิตย์", "จันทร์", "อังค�
 const TITLE_REGEX = /(ว่าที่\s*ร\.?ต\.?\s*(หญิง)?|นางสาว|นาง|นาย|ครูผู้ช่วย|ครู|ข้าราชการ|พนักงานราชการ|ลูกจ้างชั่วคราว)/g;
 
 function doGet(e) {
-  var page = e && e.parameter ? e.parameter.page : '';
-  if (page == 'admin_dashboard') {
-    return HtmlService.createHtmlOutputFromFile('AdminDashboard')
-      .setTitle('Dashboard ผู้บริหาร')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-  }
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('ระบบยื่นคำร้องลาออนไลน์')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  return ContentService.createTextOutput(JSON.stringify({ service: 'kbs-leave-api', status: 'ok' }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ==========================================
@@ -819,6 +811,10 @@ function lineFetch_(url, token, payload) {
 function doPost(e) {
   try {
     var json = JSON.parse(e.postData.contents);
+    if (json && json.kind === 'api') {
+      return ContentService.createTextOutput(JSON.stringify(dispatchApiRequest_(json)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     var events = json.events;
     if (!events || events.length === 0) return ContentService.createTextOutput('ok');
     var event = events[0];
@@ -866,6 +862,34 @@ function doPost(e) {
     Logger.log('doPost error: ' + err);
   }
   return ContentService.createTextOutput(JSON.stringify({ content: "ok" })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function dispatchApiRequest_(request) {
+  if (!API_SHARED_SECRET || request.apiSecret !== API_SHARED_SECRET) {
+    return { success: false, error: 'API_UNAUTHORIZED' };
+  }
+
+  var apiMethods = {
+    getUserByIdToken: getUserByIdToken,
+    registerLine: registerLine,
+    apiGetStaffList: apiGetStaffList,
+    apiGetAllSchedulesMap: apiGetAllSchedulesMap,
+    apiGetSchedule: apiGetSchedule,
+    apiGetLeaveBalance: apiGetLeaveBalance,
+    apiCheckScheduleForLeave: apiCheckScheduleForLeave,
+    apiRecordLeave: apiRecordLeave,
+    getDailyStats: getDailyStats
+  };
+  var method = apiMethods[request.method];
+  if (!method || !Array.isArray(request.args)) {
+    return { success: false, error: 'API_NOT_FOUND' };
+  }
+
+  try {
+    return { success: true, data: method.apply(null, request.args) };
+  } catch (error) {
+    return { success: false, error: error.message || String(error) };
+  }
 }
 
 function findTeacherLineId_(nameToFind) {
@@ -974,7 +998,8 @@ function updateLeaveStatus_(leaveID, category, action) {
 // ==========================================
 // 📈 5. Dashboard ผู้บริหาร
 // ==========================================
-function getDailyStats(dateStr) {
+function getDailyStats(idToken, dateStr) {
+  requireAdmin_(idToken);
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var result = [];
   var target = parseYMD_(dateStr);
@@ -1048,6 +1073,13 @@ function requireUser_(idToken) {
   var user = getUserByLineId_(uid);
   if (!user) throw new Error('NOT_REGISTERED');
   return user;
+}
+
+function requireAdmin_(idToken) {
+  var uid = verifyIdToken_(idToken);
+  if (!uid) throw new Error('AUTH_EXPIRED');
+  if (uid !== ADMIN_USER_ID) throw new Error('NOT_ADMIN');
+  return uid;
 }
 
 function getUserByIdToken(idToken) {
