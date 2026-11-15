@@ -11,7 +11,7 @@ export const KBS_CONFIG = {
       id: "general",
       name: "งานบริหารทั่วไป",
       desc: "แจ้งซ่อม จองห้อง ขอรถ หรือกลุ่มบริหารทั่วไป",
-      url: "https://kbs-gm.web.app/general/", // Domain เดียวกัน
+      url: new URL("./general/", window.location.href).href, // Domain เดียวกัน
       isExternalUrl: false
     },
     {
@@ -25,7 +25,7 @@ export const KBS_CONFIG = {
       id: "pay",
       name: "งานงบประมาณ",
       desc: "พิมพ์เบิกจ่าย พัสดุ หรือกลุ่มบริหารงบประมาณ",
-      url: "https://kbs-gm.web.app/pay/", // 👈 เปลี่ยนเป็นโฟลเดอร์ย่อยใน Host เดียวกัน
+      url: new URL("./pay/", window.location.href).href,// 👈 เปลี่ยนเป็นโฟลเดอร์ย่อยใน Host เดียวกัน
       isExternalUrl: false                // 👈 เปลี่ยนเป็น false
     },
     {
