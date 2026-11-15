@@ -6,10 +6,48 @@ import {
   insertAuditLog 
 } from "./firestore.js";
 
+// ============================================================================
+// ⚙️ DEV MODE CONFIGURATION (ตั้งเป็น false เมื่อต้องการ Deploy ขึ้นเว็บจริง)
+// ============================================================================
+const IS_DEV_MODE = true;
+const DEV_LINE_USER_ID = "Uee9e25daa4093ff804637d5c55c6be03";
+
 const STORAGE_KEY = "kbs_user_session";
 let pendingLineProfile = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // --------------------------------------------------------------------------
+  // 🔓 0. DEV MODE: ข้าม LINE Login แล้วดึงข้อมูลจาก Firestore ทันที
+  // --------------------------------------------------------------------------
+  if (IS_DEV_MODE) {
+    console.warn(`⚠️ [KBS Portal] DEV MODE: กำลังดึงข้อมูลจาก Firestore ด้วย LINE ID: ${DEV_LINE_USER_ID}`);
+    showView("loading-view");
+
+    try {
+      const committeeData = await getCommitteeByLineId(DEV_LINE_USER_ID);
+
+      if (committeeData) {
+        const pictureUrl = committeeData.picture || committeeData.pictureUrl || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+        createSessionAndProceed(committeeData, pictureUrl);
+      } else {
+        // กรณีไม่พบในระบบ หรือ status ยังไม่เป็น "done" -> จำลองเปิดหน้าลงทะเบียน
+        pendingLineProfile = {
+          userId: DEV_LINE_USER_ID,
+          displayName: "ผู้ใช้งานทดสอบ (Dev Mode)",
+          pictureUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+        };
+        await openRegistrationView(pendingLineProfile);
+      }
+    } catch (err) {
+      alert("Dev Mode ดึงข้อมูลจาก Firestore ไม่สำเร็จ: " + err.message);
+      showView("login-view");
+    }
+    return;
+  }
+
+  // --------------------------------------------------------------------------
+  // 🔒 โหมดใช้งานจริง (Production)
+  // --------------------------------------------------------------------------
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
 
