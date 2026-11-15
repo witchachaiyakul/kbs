@@ -1,0 +1,9 @@
+# โฟลเดอร์ระบบย่อยที่คัดลอกมารวมตอน Deploy (ไม่เก็บขึ้น Repo ของ kbs-main)
+public/general/
+public/pay/
+
+
+# ไฟล์ระบบและ Cache
+.firebase/
+.DS_Store
+Thumbs.db

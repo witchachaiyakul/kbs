@@ -9,31 +9,31 @@ export const KBS_CONFIG = {
   SYSTEMS: [
     {
       id: "general",
-      name: "ระบบงานทั่วไป",
-      desc: "จัดการงานธุรการและเอกสาร",
+      name: "งานบริหารทั่วไป",
+      desc: "แจ้งซ่อม จองห้อง ขอรถ หรือกลุ่มบริหารทั่วไป",
       url: "https://kbs-gm.web.app/general/", // Domain เดียวกัน
       isExternalUrl: false
     },
     {
-      id: "leave",
-      name: "ระบบลางาน",
-      desc: "ยื่นใบลาและตรวจสอบวันลา",
-      url: "https://kbs-gm.web.app/leave/",   // Domain เดียวกัน
+      id: "hr",
+      name: "งานบุคคล",
+      desc: "ยื่นใบลา ตรวจสอบวันลาหรือกล่มบริหารบุคคล",
+      url: "https://kbs-gm.web.app/hr/",   // Domain เดียวกัน
       isExternalUrl: false
     },
     {
       id: "pay",
-      name: "ระบบการเงิน (KBS Pay)",
-      desc: "ตรวจสอบรายการเบิกจ่ายและค่าตอบแทน",
-      url: "https://studio-1060072528-ff5ab.web.app/", // คนละ Domain (ส่ง Token ข้ามไปให้)
-      isExternalUrl: true
+      name: "งานงบประมาณ",
+      desc: "พิมพ์เบิกจ่าย พัสดุ หรือกลุ่มบริหารงบประมาณ",
+      url: "https://kbs-gm.web.app/pay/", // 👈 เปลี่ยนเป็นโฟลเดอร์ย่อยใน Host เดียวกัน
+      isExternalUrl: false                // 👈 เปลี่ยนเป็น false
     },
     {
-      id: "system4",
-      name: "ระบบที่ 4",
-      desc: "ระบบงานเฉพาะส่วน",
-      url: "https://kbs-system4.web.app/",
-      isExternalUrl: true
+      id: "academic",
+      name: "งานวิชาการ",
+      desc: "ส่งแผน หรือกลุ่มวิชาการ",
+      url: "https://kbs-gm.web.app/academic/",
+      isExternalUrl: false
     }
   ]
 };
