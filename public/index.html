@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KBS</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 1. สถานะโหลด -->
+    <div id="loading-view" class="card center">
+      <p>กำลังตรวจสอบสิทธิ์ผู้ใช้งาน...</p>
+    </div>
+
+    <!-- 2. หน้า Login -->
+    <div id="login-view" class="card center hidden">
+      <h1>KBS
+      </h1>
+      <p class="subtitle">เข้าสู่ระบบ</p>
+      <button id="btn-line-login" class="btn-line">เข้าสู่ระบบด้วย LINE</button>
+    </div>
+
+    <!-- 3. หน้าลงทะเบียนครั้งแรก -->
+    <div id="register-view" class="card center hidden">
+      <img id="reg-avatar" src="" alt="Profile" style="width:72px; height:72px; border-radius:50%; margin-bottom:12px;">
+      <h2>ลงทะเบียนเข้าใช้งานครั้งแรก</h2>
+      <p class="subtitle">กรุณาเลือกรายชื่อของท่านเพื่อผูกกับบัญชี LINE (<span id="reg-line-name"></span>)</p>
+      
+      <div style="max-width: 400px; margin: 0 auto 20px; text-align: left;">
+        <label for="committee-select" style="display:block; margin-bottom:8px; font-weight:600;">เลือกรายชื่อบุคลากร:</label>
+        <select id="committee-select" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e1; font-size:16px;">
+          <option value="">-- กำลังโหลดรายชื่อ --</option>
+        </select>
+      </div>
+
+      <button id="btn-confirm-register" class="btn-line">ยืนยันการลงทะเบียน</button>
+    </div>
+
+    <!-- 4. หน้าเมนูหลักหลังล็อกอิน -->
+    <div id="portal-view" class="hidden">
+      <header class="topbar">
+        <div class="user-info">
+          <img id="user-avatar" src="" alt="Profile">
+          <div>
+            <strong id="user-name">ชื่อ-นามสกุล</strong>
+            <span id="user-pos" class="badge">ตำแหน่ง</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="btn-admin" class="btn-secondary hidden" onclick="location.href='admin.html'">จัดการระบบ</button>
+          <button id="btn-logout" class="btn-danger">ออกจากระบบ</button>
+        </div>
+      </header>
+
+      <main>
+        <h2>เลือกระบบที่ต้องการใช้งาน</h2>
+        <div id="systems-grid" class="grid"></div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>
