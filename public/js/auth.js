@@ -218,15 +218,24 @@ function renderPortal(session) {
   document.getElementById("user-pos").textContent = user.pos ? `${user.pos} (${user.role})` : user.role.toUpperCase();
   document.getElementById("user-avatar").src = user.picture || "https://via.placeholder.com/48";
 
+  // 1. แสดงปุ่มจัดการสิทธิ์สำหรับ Admin และผูก Event กดไปหน้า role.html
   if (user.role === "admin") {
-    document.getElementById("btn-admin").classList.remove("hidden");
+    const btnAdmin = document.getElementById("btn-admin");
+    if (btnAdmin) {
+      btnAdmin.classList.remove("hidden");
+      btnAdmin.onclick = () => {
+        window.location.href = "role.html";
+      };
+    }
   }
 
   const grid = document.getElementById("systems-grid");
   grid.innerHTML = "";
 
+  const allowedList = Array.isArray(user.allowedSystems) ? user.allowedSystems : [];
+
   KBS_CONFIG.SYSTEMS.forEach((sys) => {
-    const hasAccess = user.allowedSystems.includes(sys.id) || user.role === "admin";
+    const hasAccess = allowedList.includes(sys.id) || user.role === "admin";
     const card = document.createElement("div");
     card.className = `system-card ${hasAccess ? "" : "disabled"}`;
     card.innerHTML = `
@@ -248,10 +257,11 @@ function renderPortal(session) {
     grid.appendChild(card);
   });
 
-  document.getElementById("btn-logout").addEventListener("click", () => {
+  // 2. ใช้ onclick แทน addEventListener เพื่อป้องกันการผูก Event ซ้ำ
+  document.getElementById("btn-logout").onclick = () => {
     localStorage.removeItem(STORAGE_KEY);
     location.reload();
-  });
+  };
 
   showView("portal-view");
 }

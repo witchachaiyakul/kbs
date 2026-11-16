@@ -124,3 +124,22 @@ export async function insertAuditLog(actionType, detailsTxt, lineUserObj) {
     console.error("❌ บันทึก Audit Log ล้มเหลว:", error);
   }
 }
+
+// ดึงรายชื่อบุคลากรทั้งหมดใน collection "committees"
+export async function getAllCommittees() {
+  const querySnapshot = await getDocs(collection(db, "committees"));
+  const list = [];
+  querySnapshot.forEach((docSnap) => {
+    list.push({ docId: docSnap.id, ...docSnap.data() });
+  });
+  // เรียงตามชื่อ ก-ฮ
+  return list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "th"));
+}
+
+// อัปเดตค่า dropdown หรือสิทธิ์ของบุคลากร
+export async function updateCommitteeDropdown(docId, field, value) {
+  const docRef = doc(db, "committees", docId);
+  await updateDoc(docRef, {
+    [field]: value
+  });
+}
