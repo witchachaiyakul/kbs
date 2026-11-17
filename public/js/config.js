@@ -27,7 +27,8 @@ export const KBS_CONFIG = {
       desc: "พิมพ์เบิกจ่าย พัสดุ หรือกลุ่มบริหารงบประมาณ",
       url: new URL("./pay/", window.location.href).href,// 👈 เปลี่ยนเป็นโฟลเดอร์ย่อยใน Host เดียวกัน
       isExternalUrl: false                // 👈 เปลี่ยนเป็น false
-    },
+    }
+        /* ปิดแสดงผลชั่วคราว
     {
       id: "academic",
       name: "งานวิชาการ",
@@ -35,5 +36,6 @@ export const KBS_CONFIG = {
       url: "https://kbs-gm.web.app/academic/",
       isExternalUrl: false
     }
+      */
   ]
 };
